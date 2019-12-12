@@ -52,11 +52,61 @@ namespace TenMock.Tests
             Assert.Throws<IncorrectCallException>(() => mock.Check(e, 2));
         }
 
+        [Fact]
+        public void Register_ActT_Ok()
+        {
+            Expression<Action<Obj>> e = o => o.Act<int>();
+            var mock = new Obj();
+            mock.Register(e);
+            Assert.True(mock.IsRegistered(e));
+            Assert.Equal(1, mock.CountOfMocks());
+        }
+
+        [Fact]
+        public void Register_TwoActT_Ok()
+        {
+            Expression<Action<Obj>> e = o => o.Act<int>();
+            Expression<Action<Obj>> e2 = o => o.Act<string>();
+            var mock = new Obj();
+            mock.Register(e);
+            mock.Register(e2);
+            Assert.True(mock.IsRegistered(e));
+            Assert.True(mock.IsRegistered(e2));
+            Assert.Equal(2, mock.CountOfMocks());
+        }
+
+        [Fact]
+        public void RegisterAndCall_ActT_Ok()
+        {
+            Expression<Action<Obj>> e = o => o.Act<int>();
+            var mock = new Obj();
+            mock.Register(e);
+            mock.Act<int>();
+
+            mock.Check(e, 1);
+        }
+
+        [Fact]
+        public void RegisterAndCall_ActTIncorrectCount_Exception()
+        {
+            Expression<Action<Obj>> e = o => o.Act<int>();
+            var mock = new Obj();
+            mock.Register(e);
+            mock.Act<int>();
+
+            Assert.Throws<IncorrectCallException>(() => mock.Check(e, 2));
+        }
+
         private class Obj : Mock<Obj>
         {
             public int Func<T>() { 
                 Call(o => o.Func<T>()); 
                 return default;
+            }
+
+            public void Act<T>()
+            {
+                Call(o => o.Act<T>());
             }
         }
     }

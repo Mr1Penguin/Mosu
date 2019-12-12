@@ -23,25 +23,31 @@ namespace TenMock
 
         public void Check<TRes>(Expression<Func<T, TRes>> expression, uint count)
         {
-            var actual = mocks[GetKey(expression)];
-            if (count != actual)
-            {
-                throw new IncorrectCallException($"{GetKey(expression)}: expected {count}, actual {actual}");
-            }
+            CheckExpression(expression, count);
         }
 
         protected void Call<TRes>(Expression<Func<T, TRes>> expression)
         {
-            var key = GetKey(expression);
-            if (!mocks.ContainsKey(key))
-            {
-                return;
-            }
-
-            mocks[key]++;
+            CallExpression(expression);
         }
 
-        public bool IsRegistered(Expression<Action<T>> expression) => this.mocks.ContainsKey(expression.Body.ToString());
+        public Mock<T> Register(Expression<Action<T>> expression)
+        {
+            this.RegisterExpression(expression);
+            return this;
+        }
+
+        public void Check(Expression<Action<T>> expression, uint count)
+        {
+            CheckExpression(expression, count);
+        }
+
+        protected void Call(Expression<Action<T>> expression)
+        {
+            CallExpression(expression);
+        }
+
+        public bool IsRegistered(Expression<Action<T>> expression) => this.mocks.ContainsKey(GetKey(expression));
 
         public bool IsRegistered<TRes>(Expression<Func<T, TRes>> expression) => this.mocks.ContainsKey(GetKey(expression));
 
@@ -57,6 +63,26 @@ namespace TenMock
             string key = GetKey(expression);
             mocks.Remove(key);
             mocks.Add(key, 0);
+        }
+
+        private void CheckExpression<TDeleg>(Expression<TDeleg> expression, uint count)
+        {
+            var actual = mocks[GetKey(expression)];
+            if (count != actual)
+            {
+                throw new IncorrectCallException($"{GetKey(expression)}: expected {count}, actual {actual}");
+            }
+        }
+
+        private void CallExpression<TDeleg>(Expression<TDeleg> expression)
+        {
+            var key = GetKey(expression);
+            if (!mocks.ContainsKey(key))
+            {
+                return;
+            }
+
+            mocks[key]++;
         }
 
         private static string GetKey<TDeleg>(Expression<TDeleg> expression)
