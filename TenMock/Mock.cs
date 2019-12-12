@@ -8,17 +8,18 @@ namespace TenMock
 {
     abstract public class Mock<T>
     {
-        private Dictionary<string, uint> mocks;
+        private Dictionary<string, MockData> mocks;
 
         public Mock()
         {
-            mocks = new Dictionary<string, uint>();
+            mocks = new Dictionary<string, MockData>();
         }
 
-        public Mock<T> Register<TRes>(Expression<Func<T, TRes>> expression)
+        public IRegister<TRes> Register<TRes>(Expression<Func<T, TRes>> expression)
         {
             this.RegisterExpression(expression);
-            return this;
+            mocks[GetKey(expression)].Return = default(TRes);
+            return new RegisterImpl<TRes>() { Key = GetKey(expression), Ref = this };
         }
 
         public void Check<TRes>(Expression<Func<T, TRes>> expression, uint count)
@@ -26,15 +27,22 @@ namespace TenMock
             CheckExpression(expression, count);
         }
 
-        protected void Call<TRes>(Expression<Func<T, TRes>> expression)
+        protected TRes Call<TRes>(Expression<Func<T, TRes>> expression, params object[] args)
         {
             CallExpression(expression);
+
+            var func = mocks[GetKey(expression)].ReturnCall;
+            if (func != null)
+            {
+                return (TRes)func.DynamicInvoke(args);
+            }
+
+            return (TRes)mocks[GetKey(expression)].Return;
         }
 
-        public Mock<T> Register(Expression<Action<T>> expression)
+        public void Register(Expression<Action<T>> expression)
         {
             this.RegisterExpression(expression);
-            return this;
         }
 
         public void Check(Expression<Action<T>> expression, uint count)
@@ -62,12 +70,12 @@ namespace TenMock
 
             string key = GetKey(expression);
             mocks.Remove(key);
-            mocks.Add(key, 0);
+            mocks.Add(key, new MockData());
         }
 
         private void CheckExpression<TDeleg>(Expression<TDeleg> expression, uint count)
         {
-            var actual = mocks[GetKey(expression)];
+            var actual = mocks[GetKey(expression)].CallCount;
             if (count != actual)
             {
                 throw new IncorrectCallException($"{GetKey(expression)}: expected {count}, actual {actual}");
@@ -82,7 +90,7 @@ namespace TenMock
                 return;
             }
 
-            mocks[key]++;
+            mocks[key].CallCount++;
         }
 
         private static string GetKey<TDeleg>(Expression<TDeleg> expression)
@@ -141,5 +149,26 @@ namespace TenMock
         }
 
         private static bool IsExpressionCorrect<TDeleg>(Expression<TDeleg> expression) => expression.Body.NodeType == ExpressionType.Call;
+
+        private class RegisterImpl<TRes> : IRegister<TRes>
+        {
+            public Mock<T> Ref { get; set; }
+            public string Key { get; set; }
+
+            public void Returns(TRes val)
+            {
+                Ref.mocks[Key].Return = val;
+            }
+
+            public void Returns(Func<TRes> func)
+            {
+                Ref.mocks[Key].ReturnCall = func;
+            }
+
+            public void Returns<T1>(Func<T1, TRes> func)
+            {
+                Ref.mocks[Key].ReturnCall = func;
+            }
+        }
     }
 }

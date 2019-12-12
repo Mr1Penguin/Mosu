@@ -31,12 +31,34 @@ namespace TenMock.Tests
         }
 
         [Fact]
-        public void RegisterAndCall_FuncT_Ok()
+        public void RegisterAndCall_FuncTDefault_Ok()
         {
             Expression<Func<Obj, int>> e = o => o.Func<int>();
             var mock = new Obj();
             mock.Register(e);
-            mock.Func<int>();
+            Assert.Equal(default, mock.Func<int>());
+
+            mock.Check(e, 1);
+        }
+
+        [Fact]
+        public void RegisterAndCall_FuncTVal_Ok()
+        {
+            Expression<Func<Obj, int>> e = o => o.Func<int>();
+            var mock = new Obj();
+            mock.Register(e).Returns(42);
+            Assert.Equal(42, mock.Func<int>());
+
+            mock.Check(e, 1);
+        }
+
+        [Fact]
+        public void RegisterAndCall_FuncTFunc_Ok()
+        {
+            Expression<Func<Obj, int>> e = o => o.Func<int>();
+            var mock = new Obj();
+            mock.Register(e).Returns(() => 25);
+            Assert.Equal(25, mock.Func<int>());
 
             mock.Check(e, 1);
         }
@@ -99,9 +121,9 @@ namespace TenMock.Tests
 
         private class Obj : Mock<Obj>
         {
-            public int Func<T>() { 
-                Call(o => o.Func<T>()); 
-                return default;
+            public int Func<T>() 
+            { 
+                return Call(o => o.Func<T>()); 
             }
 
             public void Act<T>()
