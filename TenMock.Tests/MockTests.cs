@@ -75,6 +75,28 @@ namespace TenMock.Tests
         }
 
         [Fact]
+        public void RegisterAndCall_FuncTCorrectExactArgValue_Ok()
+        {
+            Expression<Func<Obj, int>> e = o => o.FuncArg(42);
+            var mock = new Obj();
+            mock.Register(e);
+            mock.FuncArg(42);
+
+            mock.Check(e, 1);
+        }
+
+        [Fact]
+        public void RegisterAndCall_FuncTIncorrectExactArgValue_Ok()
+        {
+            Expression<Func<Obj, int>> e = o => o.FuncArg(42);
+            var mock = new Obj();
+            mock.Register(e);
+            mock.FuncArg(43);
+
+            Assert.Throws<IncorrectCallException>(() => mock.Check(e, 1));
+        }
+
+        [Fact]
         public void Register_ActT_Ok()
         {
             Expression<Action<Obj>> e = o => o.Act<int>();
@@ -124,6 +146,11 @@ namespace TenMock.Tests
             public int Func<T>() 
             { 
                 return Call(o => o.Func<T>()); 
+            }
+
+            public int FuncArg(int j)
+            {
+                return Call(o => o.FuncArg(j));
             }
 
             public void Act<T>()

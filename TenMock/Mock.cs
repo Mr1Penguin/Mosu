@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -71,14 +72,32 @@ namespace TenMock
             string key = GetKey(expression);
             mocks.Remove(key);
             mocks.Add(key, new MockData());
+
+            mocks[key].Arguments = ((MethodCallExpression)expression.Body).Arguments.Select(ExtractValue).ToArray();
         }
 
         private void CheckExpression<TDeleg>(Expression<TDeleg> expression, uint count)
         {
-            var actual = mocks[GetKey(expression)].CallCount;
+            var key = GetKey(expression);
+            var actual = mocks[key].CallCount;
             if (count != actual)
             {
                 throw new IncorrectCallException($"{GetKey(expression)}: expected {count}, actual {actual}");
+            }
+
+            var method = (MethodCallExpression)expression.Body;
+            var args = method.Arguments;
+
+            for (int j = 0; j < count; ++j)
+            {
+                for (int i = 0; i < args.Count; ++i)
+                {
+                    var res = CheckArgument(args[i], mocks[GetKey(expression)].ActualArguments[j][i]);
+                    if (!res)
+                    {
+                        throw new IncorrectCallException($"{GetKey(expression)}: argument {i} expected {args[i]}, actual {mocks[GetKey(expression)].ActualArguments[j][i]}");
+                    }
+                }
             }
         }
 
@@ -90,7 +109,8 @@ namespace TenMock
                 return;
             }
 
-            mocks[key].CallCount++;
+            mocks[key].CallCount++;            
+            mocks[key].ActualArguments.Add(((MethodCallExpression)expression.Body).Arguments.Select(ExtractValue).ToArray());
         }
 
         private static string GetKey<TDeleg>(Expression<TDeleg> expression)
@@ -135,6 +155,7 @@ namespace TenMock
                         sb.Append(e.Method.ReturnType.Name);
                         break;
                     default:
+                        sb.Append(param.Type.Name);
                         break;
                 }
                 sb.Append(", ");
@@ -149,6 +170,34 @@ namespace TenMock
         }
 
         private static bool IsExpressionCorrect<TDeleg>(Expression<TDeleg> expression) => expression.Body.NodeType == ExpressionType.Call;
+
+        private static object ExtractValue(Expression expression)
+        {
+            switch (expression)
+            {
+                case ConstantExpression e:
+                    return e.Value;
+                case MethodCallExpression e:
+                    throw new NotImplementedException();
+                case MemberExpression e:
+                    return Expression.Lambda(e).Compile().DynamicInvoke();
+                default:
+                    throw new ArgumentException();
+            }
+        }
+
+        private static bool CheckArgument(Expression expression, object argument)
+        {
+            switch (expression)
+            {
+                case ConstantExpression e:
+                    if (!e.Type.IsInstanceOfType(argument))
+                        return false;
+                    return e.Value.Equals(argument);
+                default:
+                    throw new ArgumentException();
+            }
+        }
 
         private class RegisterImpl<TRes> : IRegister<TRes>
         {
