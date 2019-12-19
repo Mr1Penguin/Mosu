@@ -194,6 +194,9 @@ namespace TenMock
                     if (!e.Type.IsInstanceOfType(argument))
                         return false;
                     return e.Value.Equals(argument);
+                case MemberExpression e:
+                    var res = Expression.Lambda(e).Compile().DynamicInvoke();
+                    return res.Equals(argument);
                 default:
                     throw new ArgumentException();
             }

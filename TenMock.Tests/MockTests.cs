@@ -64,6 +64,17 @@ namespace TenMock.Tests
         }
 
         [Fact]
+        public void RegisterAndCall_FuncArgTFunc_Ok()
+        {
+            Expression<Func<Obj, int>> e = o => o.FuncArg(2);
+            var mock = new Obj();
+            mock.Register(e).Returns((int k) => 25 + k);
+            Assert.Equal(27, mock.FuncArg(2));
+
+            mock.Check(e, 1);
+        }
+
+        [Fact]
         public void RegisterAndCall_FuncTIncorrectCount_Exception()
         {
             Expression<Func<Obj, int>> e = o => o.Func<int>();
@@ -150,7 +161,7 @@ namespace TenMock.Tests
 
             public int FuncArg(int j)
             {
-                return Call(o => o.FuncArg(j));
+                return Call(o => o.FuncArg(j), j);
             }
 
             public void Act<T>()
