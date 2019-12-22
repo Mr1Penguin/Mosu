@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Xunit;
 
-namespace TenMock.Tests
+namespace Mosu.Tests
 {
     public class MockTests
     {

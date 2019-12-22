@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
-namespace TenMock
+namespace Mosu
 {
     abstract public class Mock<T>
     {

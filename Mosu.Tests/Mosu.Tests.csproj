@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TenMock\TenMock.csproj" />
+    <ProjectReference Include="..\Mosu\Mosu.csproj" />
   </ItemGroup>
 
 </Project>

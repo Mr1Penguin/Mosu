@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace TenMock
+namespace Mosu
 {
     public interface IRegister<T>
     {
