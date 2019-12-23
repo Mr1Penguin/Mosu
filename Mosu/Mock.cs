@@ -19,8 +19,9 @@ namespace Mosu
         public IRegister<TRes> Register<TRes>(Expression<Func<T, TRes>> expression)
         {
             this.RegisterExpression(expression);
-            mocks[GetKey(expression)].Return = default(TRes);
-            return new RegisterImpl<TRes>() { Key = GetKey(expression), Ref = this };
+            var key = KeyGenerator.GetKey(expression);
+            mocks[key].Return = default(TRes);
+            return new RegisterImpl<TRes>() { Key = key, Ref = this };
         }
 
         public void Check<TRes>(Expression<Func<T, TRes>> expression, uint count)
@@ -32,13 +33,14 @@ namespace Mosu
         {
             CallExpression(expression);
 
-            var func = mocks[GetKey(expression)].ReturnCall;
+            var key = KeyGenerator.GetKey(expression);
+            var func = mocks[key].ReturnCall;
             if (func != null)
             {
                 return (TRes)func.DynamicInvoke(args);
             }
 
-            return (TRes)mocks[GetKey(expression)].Return;
+            return (TRes)mocks[key].Return;
         }
 
         public void Register(Expression<Action<T>> expression)
@@ -56,9 +58,9 @@ namespace Mosu
             CallExpression(expression);
         }
 
-        public bool IsRegistered(Expression<Action<T>> expression) => this.mocks.ContainsKey(GetKey(expression));
+        public bool IsRegistered(Expression<Action<T>> expression) => this.mocks.ContainsKey(KeyGenerator.GetKey(expression));
 
-        public bool IsRegistered<TRes>(Expression<Func<T, TRes>> expression) => this.mocks.ContainsKey(GetKey(expression));
+        public bool IsRegistered<TRes>(Expression<Func<T, TRes>> expression) => this.mocks.ContainsKey(KeyGenerator.GetKey(expression));
 
         public int CountOfMocks() => mocks.Count;
 
@@ -69,7 +71,7 @@ namespace Mosu
                 throw new ArgumentException("expression must be a call"); 
             }
 
-            string key = GetKey(expression);
+            string key = KeyGenerator.GetKey(expression);
             mocks.Remove(key);
             mocks.Add(key, new MockData());
 
@@ -78,24 +80,24 @@ namespace Mosu
 
         private void CheckExpression<TDeleg>(Expression<TDeleg> expression, uint count)
         {
-            var key = GetKey(expression);
+            var key = KeyGenerator.GetKey(expression);
             var actual = mocks[key].CallCount;
             if (count != actual)
             {
-                throw new IncorrectCallException($"{GetKey(expression)}: expected {count}, actual {actual}");
+                throw new IncorrectCallException($"{key}: expected {count}, actual {actual}");
             }
 
             var method = (MethodCallExpression)expression.Body;
             var args = method.Arguments;
 
-            for (int j = 0; j < count; ++j)
+            for (var j = 0; j < count; ++j)
             {
-                for (int i = 0; i < args.Count; ++i)
+                for (var i = 0; i < args.Count; ++i)
                 {
-                    var res = CheckArgument(args[i], mocks[GetKey(expression)].ActualArguments[j][i]);
+                    var res = CheckArgument(args[i], mocks[key].ActualArguments[j][i]);
                     if (!res)
                     {
-                        throw new IncorrectCallException($"{GetKey(expression)}: argument {i} expected {args[i]}, actual {mocks[GetKey(expression)].ActualArguments[j][i]}");
+                        throw new IncorrectCallException($"{key}: argument {i} expected {args[i]}, actual {mocks[key].ActualArguments[j][i]}");
                     }
                 }
             }
@@ -103,7 +105,7 @@ namespace Mosu
 
         private void CallExpression<TDeleg>(Expression<TDeleg> expression)
         {
-            var key = GetKey(expression);
+            var key = KeyGenerator.GetKey(expression);
             if (!mocks.ContainsKey(key))
             {
                 return;
@@ -111,62 +113,6 @@ namespace Mosu
 
             mocks[key].CallCount++;            
             mocks[key].ActualArguments.Add(((MethodCallExpression)expression.Body).Arguments.Select(ExtractValue).ToArray());
-        }
-
-        private static string GetKey<TDeleg>(Expression<TDeleg> expression)
-        {
-            var body = (MethodCallExpression)expression.Body;
-            var method = body.Method;
-            var sb = new StringBuilder();
-            sb.Append(method.ReturnType.Name).Append(" ").Append(method.Name);
-            AddGenericArguments(sb, method.GetGenericArguments());
-            AddArguments(sb, body.Arguments);
-            return sb.ToString();
-        }
-
-        private static void AddGenericArguments(StringBuilder sb, Type[] types)
-        {
-            if (types.Length == 0)
-            {
-                return;
-            }
-
-            sb.Append("<");
-            foreach (var type in types)
-            {
-                sb.Append(type.Name).Append(", ");
-            }
-
-            sb.Length -= 2;
-            sb.Append(">");
-        }
-
-        private static void AddArguments(StringBuilder sb, IReadOnlyCollection<Expression> Arguments)
-        {
-            sb.Append("(");
-            foreach (var param in Arguments)
-            {
-                switch (param)
-                {
-                    case ConstantExpression e:
-                        sb.Append(e.Type.Name);
-                        break;
-                    case MethodCallExpression e:
-                        sb.Append(e.Method.ReturnType.Name);
-                        break;
-                    default:
-                        sb.Append(param.Type.Name);
-                        break;
-                }
-                sb.Append(", ");
-            }
-
-            if (Arguments.Count != 0)
-            {
-                sb.Length -= 2;
-            }
-
-            sb.Append(")");
         }
 
         private static bool IsExpressionCorrect<TDeleg>(Expression<TDeleg> expression) => expression.Body.NodeType == ExpressionType.Call;
