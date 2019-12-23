@@ -1,6 +1,8 @@
 # Mosu
 Simple mock framework designed to work with UWP in release mode
 
+![](https://github.com/Mr1Penguin/Mosu/workflows/.NET%20Core/badge.svg)
+
 This project was created as part of another bigger project.
 The purpose of it is to replace Moq in UWP test projects so I could run tests in release mode where you unable to generate code in runtime.
 
