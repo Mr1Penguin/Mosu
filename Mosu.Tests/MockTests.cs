@@ -193,7 +193,7 @@ namespace Mosu.Tests
         private class Parent { }
         private class Child : Parent { }
 
-        private class Obj : Mock<Obj> //, ISomeInterface
+        private class Obj : Mock<Obj/*Or ISomeInterface*/> //, ISomeInterface
         {
             public void ActWithParent(Parent arg) 
             {
