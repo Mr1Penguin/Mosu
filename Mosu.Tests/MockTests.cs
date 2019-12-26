@@ -10,7 +10,7 @@ namespace Mosu.Tests
         [Fact]
         public void Register_FuncT_Ok()
         {
-            Expression<Func<Obj, int>> e = o => o.Func<int>();
+            Expression<Func<IObj, int>> e = o => o.Func<int>();
             var mock = new Obj();
             mock.Register(e);
             Assert.True(mock.IsRegistered(e));
@@ -20,8 +20,8 @@ namespace Mosu.Tests
         [Fact]
         public void Register_TwoFuncT_Ok()
         {
-            Expression<Func<Obj, int>> e = o => o.Func<int>();
-            Expression<Func<Obj, int>> e2 = o => o.Func<string>();
+            Expression<Func<IObj, int>> e = o => o.Func<int>();
+            Expression<Func<IObj, int>> e2 = o => o.Func<string>();
             var mock = new Obj();
             mock.Register(e);
             mock.Register(e2);
@@ -33,7 +33,7 @@ namespace Mosu.Tests
         [Fact]
         public void RegisterAndCall_FuncTDefault_Ok()
         {
-            Expression<Func<Obj, int>> e = o => o.Func<int>();
+            Expression<Func<IObj, int>> e = o => o.Func<int>();
             var mock = new Obj();
             mock.Register(e);
             Assert.Equal(default, mock.Func<int>());
@@ -44,7 +44,7 @@ namespace Mosu.Tests
         [Fact]
         public void RegisterAndCall_FuncTVal_Ok()
         {
-            Expression<Func<Obj, int>> e = o => o.Func<int>();
+            Expression<Func<IObj, int>> e = o => o.Func<int>();
             var mock = new Obj();
             mock.Register(e).Returns(42);
             Assert.Equal(42, mock.Func<int>());
@@ -55,7 +55,7 @@ namespace Mosu.Tests
         [Fact]
         public void RegisterAndCall_FuncTFunc_Ok()
         {
-            Expression<Func<Obj, int>> e = o => o.Func<int>();
+            Expression<Func<IObj, int>> e = o => o.Func<int>();
             var mock = new Obj();
             mock.Register(e).Returns(() => 25);
             Assert.Equal(25, mock.Func<int>());
@@ -66,7 +66,7 @@ namespace Mosu.Tests
         [Fact]
         public void RegisterAndCall_FuncArgTFunc_Ok()
         {
-            Expression<Func<Obj, int>> e = o => o.FuncArg(2);
+            Expression<Func<IObj, int>> e = o => o.FuncArg(2);
             var mock = new Obj();
             mock.Register(e).Returns((int k) => 25 + k);
             Assert.Equal(27, mock.FuncArg(2));
@@ -77,7 +77,7 @@ namespace Mosu.Tests
         [Fact]
         public void RegisterAndCall_FuncTIncorrectCount_Exception()
         {
-            Expression<Func<Obj, int>> e = o => o.Func<int>();
+            Expression<Func<IObj, int>> e = o => o.Func<int>();
             var mock = new Obj();
             mock.Register(e);
             mock.Func<int>();
@@ -88,7 +88,7 @@ namespace Mosu.Tests
         [Fact]
         public void RegisterAndCall_FuncTCorrectExactArgValue_Ok()
         {
-            Expression<Func<Obj, int>> e = o => o.FuncArg(42);
+            Expression<Func<IObj, int>> e = o => o.FuncArg(42);
             var mock = new Obj();
             mock.Register(e);
             mock.FuncArg(42);
@@ -99,7 +99,7 @@ namespace Mosu.Tests
         [Fact]
         public void RegisterAndCall_FuncTIncorrectExactArgValue_Ok()
         {
-            Expression<Func<Obj, int>> e = o => o.FuncArg(42);
+            Expression<Func<IObj, int>> e = o => o.FuncArg(42);
             var mock = new Obj();
             mock.Register(e);
             mock.FuncArg(43);
@@ -110,7 +110,7 @@ namespace Mosu.Tests
         [Fact]
         public void Register_ActT_Ok()
         {
-            Expression<Action<Obj>> e = o => o.Act<int>();
+            Expression<Action<IObj>> e = o => o.Act<int>();
             var mock = new Obj();
             mock.Register(e);
             Assert.True(mock.IsRegistered(e));
@@ -120,8 +120,8 @@ namespace Mosu.Tests
         [Fact]
         public void Register_TwoActT_Ok()
         {
-            Expression<Action<Obj>> e = o => o.Act<int>();
-            Expression<Action<Obj>> e2 = o => o.Act<string>();
+            Expression<Action<IObj>> e = o => o.Act<int>();
+            Expression<Action<IObj>> e2 = o => o.Act<string>();
             var mock = new Obj();
             mock.Register(e);
             mock.Register(e2);
@@ -133,7 +133,7 @@ namespace Mosu.Tests
         [Fact]
         public void RegisterAndCall_ActT_Ok()
         {
-            Expression<Action<Obj>> e = o => o.Act<int>();
+            Expression<Action<IObj>> e = o => o.Act<int>();
             var mock = new Obj();
             mock.Register(e);
             mock.Act<int>();
@@ -144,7 +144,7 @@ namespace Mosu.Tests
         [Fact]
         public void RegisterAndCall_ActTIncorrectCount_Exception()
         {
-            Expression<Action<Obj>> e = o => o.Act<int>();
+            Expression<Action<IObj>> e = o => o.Act<int>();
             var mock = new Obj();
             mock.Register(e);
             mock.Act<int>();
@@ -155,7 +155,7 @@ namespace Mosu.Tests
         [Fact]
         public void RegisterAndCall_ActAnyOfParentArg_Ok()
         {
-            Expression<Action<Obj>> e = o => o.ActWithParent(Arg.AnyOf<Parent>());
+            Expression<Action<IObj>> e = o => o.ActWithParent(Arg.AnyOf<Parent>());
             var mock = new Obj();
             mock.Register(e);
             var p = new Parent();
@@ -167,7 +167,7 @@ namespace Mosu.Tests
         [Fact]
         public void RegisterAndCall_ActAnyOfChildArg_Ok()
         {
-            Expression<Action<Obj>> e = o => o.ActWithParent(Arg.AnyOf<Parent>());
+            Expression<Action<IObj>> e = o => o.ActWithParent(Arg.AnyOf<Parent>());
             var mock = new Obj();
             mock.Register(e);
             var p = new Child();
@@ -179,7 +179,7 @@ namespace Mosu.Tests
         [Fact]
         public void RegisterAndCall_ActAnyOfWrongArg_Exception()
         {
-            Expression<Action<Obj>> e = o => o.ActWithParent(Arg.AnyOf<Child>());
+            Expression<Action<IObj>> e = o => o.ActWithParent(Arg.AnyOf<Child>());
             var mock = new Obj();
             mock.Register(e);
             var p = new Parent();
@@ -193,7 +193,14 @@ namespace Mosu.Tests
         private class Parent { }
         private class Child : Parent { }
 
-        private class Obj : Mock<Obj/*Or ISomeInterface*/> //, ISomeInterface
+        private interface IObj
+        {
+            public void ActWithParent(Parent arg);
+            public int Func<T>();
+            public int FuncArg(int j);
+            public void Act<T>();
+        }
+        private class Obj : Mock<IObj>, IObj
         {
             public void ActWithParent(Parent arg) 
             {
