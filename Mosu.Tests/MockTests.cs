@@ -152,8 +152,54 @@ namespace Mosu.Tests
             Assert.Throws<IncorrectCallException>(() => mock.Check(e, 2));
         }
 
-        private class Obj : Mock<Obj>
+        [Fact]
+        public void RegisterAndCall_ActAnyOfParentArg_Ok()
         {
+            Expression<Action<Obj>> e = o => o.ActWithParent(Arg.AnyOf<Parent>());
+            var mock = new Obj();
+            mock.Register(e);
+            var p = new Parent();
+            mock.ActWithParent(p);
+
+            mock.Check(e, 1);
+        }
+
+        [Fact]
+        public void RegisterAndCall_ActAnyOfChildArg_Ok()
+        {
+            Expression<Action<Obj>> e = o => o.ActWithParent(Arg.AnyOf<Parent>());
+            var mock = new Obj();
+            mock.Register(e);
+            var p = new Child();
+            mock.ActWithParent(p);
+
+            mock.Check(e, 1);
+        }
+
+        [Fact]
+        public void RegisterAndCall_ActAnyOfWrongArg_Exception()
+        {
+            Expression<Action<Obj>> e = o => o.ActWithParent(Arg.AnyOf<Child>());
+            var mock = new Obj();
+            mock.Register(e);
+            var p = new Parent();
+            mock.ActWithParent(p);
+
+            var exp = Assert.Throws<IncorrectCallException>(() => mock.Check(e, 1));
+            var message = "Void ActWithParent(Parent): argument 0 expected [Mosu.Tests.MockTests+Child]AnyOf(), actual Mosu.Tests.MockTests+Parent";
+            Assert.Equal(message, exp.Message);
+        }
+
+        private class Parent { }
+        private class Child : Parent { }
+
+        private class Obj : Mock<Obj> //, ISomeInterface
+        {
+            public void ActWithParent(Parent arg) 
+            {
+                Call(o => o.ActWithParent(arg)); 
+            }
+
             public int Func<T>() 
             { 
                 return Call(o => o.Func<T>()); 

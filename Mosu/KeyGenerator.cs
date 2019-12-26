@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace Mosu
@@ -14,7 +16,7 @@ namespace Mosu
             var sb = new StringBuilder();
             sb.Append(method.ReturnType.Name).Append(" ").Append(method.Name);
             AddGenericArguments(sb, method.GetGenericArguments());
-            AddArguments(sb, body.Arguments);
+            AddArguments(sb, body.Arguments, method);
             return sb.ToString();
         }
 
@@ -35,21 +37,32 @@ namespace Mosu
             sb.Append(">");
         }
 
-        private static void AddArguments(StringBuilder sb, IReadOnlyCollection<Expression> Arguments)
+        private static void AddArguments(
+            StringBuilder sb, 
+            IReadOnlyCollection<Expression> Arguments,
+            MethodInfo methodInfo)
         {
             sb.Append("(");
-            foreach (var param in Arguments)
+            var parameters = methodInfo.GetParameters();
+            foreach (var param in Arguments.Zip(methodInfo.GetParameters(), (arg, par) => (arg, par)))
             {
-                switch (param)
+                switch (param.arg)
                 {
                     case ConstantExpression e:
                         sb.Append(e.Type.Name);
                         break;
                     case MethodCallExpression e:
-                        sb.Append(e.Method.ReturnType.Name);
+                        if (e.Method.DeclaringType.Name == nameof(Arg))
+                        {
+                            sb.Append(param.par.ParameterType.Name);
+                        }
+                        else
+                        {
+                            sb.Append(e.Method.ReturnType.Name);
+                        }
                         break;
                     default:
-                        sb.Append(param.Type.Name);
+                        sb.Append(param.arg.Type.Name);
                         break;
                 }
                 sb.Append(", ");

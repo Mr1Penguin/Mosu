@@ -68,7 +68,7 @@ namespace Mosu
         {
             if (!IsExpressionCorrect(expression))
             {
-                throw new ArgumentException("expression must be a call"); 
+                throw new ArgumentException("expression must be a call");
             }
 
             string key = KeyGenerator.GetKey(expression);
@@ -97,10 +97,20 @@ namespace Mosu
                     var res = CheckArgument(args[i], mocks[key].ActualArguments[j][i]);
                     if (!res)
                     {
-                        throw new IncorrectCallException($"{key}: argument {i} expected {args[i]}, actual {mocks[key].ActualArguments[j][i]}");
+                        throw new IncorrectCallException($"{key}: argument {i} expected {ExpressionToString(args[i])}, actual {mocks[key].ActualArguments[j][i]}");
                     }
                 }
             }
+        }
+
+        private string ExpressionToString(Expression expression)
+        {
+            if (expression is MethodCallExpression e && e.Method.DeclaringType.Name == nameof(Arg))
+            {
+                return $"[{e.Method.ReturnType}]{e.Method.Name}()";
+            }
+
+            return expression.ToString();
         }
 
         private void CallExpression<TDeleg>(Expression<TDeleg> expression)
@@ -124,7 +134,11 @@ namespace Mosu
                 case ConstantExpression e:
                     return e.Value;
                 case MethodCallExpression e:
-                    throw new NotImplementedException();
+                    if (e.Method.DeclaringType.Name != nameof(Arg))
+                    {
+                        throw new ArgumentException();
+                    }
+                    return e;
                 case MemberExpression e:
                     return Expression.Lambda(e).Compile().DynamicInvoke();
                 default:
@@ -140,9 +154,22 @@ namespace Mosu
                     if (!e.Type.IsInstanceOfType(argument))
                         return false;
                     return e.Value.Equals(argument);
+                case MethodCallExpression e:
+                    return CheckArgArgument(e, argument);
                 case MemberExpression e:
                     var res = Expression.Lambda(e).Compile().DynamicInvoke();
                     return res.Equals(argument);
+                default:
+                    throw new ArgumentException();
+            }
+        }
+
+        private static bool CheckArgArgument(MethodCallExpression expression, object argument)
+        {
+            switch(expression.Method.Name)
+            {
+                case "AnyOf":
+                    return expression.Method.ReturnType.IsInstanceOfType(argument);
                 default:
                     throw new ArgumentException();
             }
