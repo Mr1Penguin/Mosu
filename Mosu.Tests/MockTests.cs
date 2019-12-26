@@ -190,6 +190,17 @@ namespace Mosu.Tests
             Assert.Equal(message, exp.Message);
         }
 
+        [Fact]
+        public void RegisterAndCall_Callback_Ok()
+        {
+            Expression<Func<IObj, int>> e = o => o.FuncArg(Arg.AnyOf<int>());
+            var mock = new Obj();
+            int testVal = 0;
+            mock.Register(e).Callback((int k) => testVal = k);
+            mock.FuncArg(12);
+            Assert.Equal(12, testVal);
+        }
+
         private class Parent { }
         private class Child : Parent { }
 

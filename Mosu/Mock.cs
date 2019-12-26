@@ -34,6 +34,12 @@ namespace Mosu
             CallExpression(expression);
 
             var key = KeyGenerator.GetKey(expression);
+            var callback = mocks[key].Callback;
+            if (callback != null)
+            {
+                callback.DynamicInvoke(args);
+            }
+
             var func = mocks[key].ReturnCall;
             if (func != null)
             {
@@ -180,19 +186,34 @@ namespace Mosu
             public Mock<T> Ref { get; set; }
             public string Key { get; set; }
 
-            public void Returns(TRes val)
+            public IRegister<TRes> Returns(TRes val)
             {
                 Ref.mocks[Key].Return = val;
+                return this;
             }
 
-            public void Returns(Func<TRes> func)
+            public IRegister<TRes> Returns(Func<TRes> func)
             {
                 Ref.mocks[Key].ReturnCall = func;
+                return this;
             }
 
-            public void Returns<T1>(Func<T1, TRes> func)
+            public IRegister<TRes> Returns<T1>(Func<T1, TRes> func)
             {
                 Ref.mocks[Key].ReturnCall = func;
+                return this;
+            }
+
+            public IRegister<TRes> Callback<T1>(Action<T1> action)
+            {
+                Ref.mocks[Key].Callback = action;
+                return this;
+            }
+
+            public IRegister<TRes> Callback<T1, T2>(Action<T1, T2> action)
+            {
+                Ref.mocks[Key].Callback = action;
+                return this;
             }
         }
     }

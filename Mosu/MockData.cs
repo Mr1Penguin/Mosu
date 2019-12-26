@@ -15,5 +15,6 @@ namespace Mosu
         internal Delegate ReturnCall { get; set; }
         internal object[] Arguments { get; set; }
         internal List<object[]> ActualArguments { get; set; }
+        internal Delegate Callback { get; set; }
     }
 }
