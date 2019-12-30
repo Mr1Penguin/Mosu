@@ -9,7 +9,7 @@ namespace Mosu
 {
     abstract public class Mock<T>
     {
-        private Dictionary<string, MockData> mocks;
+        private readonly Dictionary<string, MockData> mocks;
 
         public Mock()
         {
