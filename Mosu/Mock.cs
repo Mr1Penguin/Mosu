@@ -164,7 +164,7 @@ namespace Mosu
                     return CheckArgArgument(e, argument);
                 case MemberExpression e:
                     var res = Expression.Lambda(e).Compile().DynamicInvoke();
-                    return res.Equals(argument);
+                    return res == argument || res.Equals(argument);
                 default:
                     throw new ArgumentException();
             }
